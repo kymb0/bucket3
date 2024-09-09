@@ -1,0 +1,30 @@
+stages:
+  - check
+
+check_iam_role:
+  stage: check
+  script:
+    - echo "Getting AWS identity"
+    - aws sts get-caller-identity
+    - echo "Listing attached IAM policies"
+    - aws iam list-attached-role-policies --role-name <runner-role-name>
+    - echo "Listing available roles"
+    - aws iam list-roles
+
+stages:
+  - metadata
+
+check_metadata:
+  stage: metadata
+  script:
+    - echo "Checking EC2 Instance Metadata"
+    - curl -I http://169.254.169.254/latest/meta-data/
+stages:
+  - test
+
+test_secrets_kms:
+  stage: test
+  script:
+    - echo "Checking Secrets and KMS"
+    - aws secretsmanager get-secret-value --secret-id <your-secret-id>
+    - aws kms decrypt --ciphertext-blob <fileb://encrypted_blob> --key-id <your-key-id>
